@@ -1,6 +1,6 @@
 # Co-Evolving Multilayer Network
 
-This code simulates a co-evolving multilayer network, that is, a network with multiple types of interactions between the nodes, while both the state of the nodes and the links that connect the nodes evolve dynamically.
+This code generates a co-evolving multilayer network, that is, a network with multiple types of interactions between the nodes, while both the state of the nodes and the links that connect the nodes evolve dynamically.
 
 <img src="./images/simulation_screenshot.svg">
 
