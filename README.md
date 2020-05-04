@@ -5,6 +5,7 @@ This code generates a co-evolving multilayer network, that is, a network with mu
 <img src="./images/simulation_screenshot.svg">
 
 Created with Python 3.7
+
 Dependencies:
 - matplotlib 3.2.1
 - numpy 1.18.4
