@@ -12,6 +12,7 @@ An exchange of a quantity takes place on the network, while the weights of the l
 # Graphs on the right, like total quantity over time and stock indices
 # Dynamics
 
+
 import pylab
 import matplotlib.pyplot as plt
 from matplotlib.patches import ArrowStyle
@@ -38,21 +39,20 @@ class CoevolvingMultilayerNetwork:
 
         # Drawing parameters
         self.node_size_min = 0.4
-        self.node_fontsize = int(20*self.node_size_min)
-        self.static_node_size = 0.15
+        self.node_font_sizes = int(20*self.node_size_min)
+        self.mln_node_size = 0.15
         self.node_size_scaling = 3000
         self.link_size_scaling = 10
-        self.nodesets = layers + 1
-        self.layer_coords = [[0, layer] for layer in range(0, self.layers)]
-        self.layer_coords.append([1, self.layers-1])  # coordinates of the dynamic node view
+        self.mln_node_sizes = self.layers*self.nodes * [self.mln_node_size*self.node_size_scaling]
         self.dynamic_node_range = range(self.layers*self.nodes, (self.layers+1)*self.nodes)
         self.colors = ['#003071', 'white', 'grey']
         self.arrow = ArrowStyle('simple', head_length=25, head_width=20, tail_width=.75)
-        self.layer_x_dist = 10
-        self.layer_y_dist = 10
+        self.layer_y_dist = 15
         self.layer_scale = 3
         self.dynamic_node_scale = 3
-        self.txt_fontsize = 15
+        self.dynamic_node_lim_x_offset = 1
+        self.dynamic_node_lim_y_offset = 3
+        self.txt_font_size = 15
         self.mln_idx = self.nodes*self.layers
 
         # Simulation parameters
@@ -77,11 +77,12 @@ class CoevolvingMultilayerNetwork:
         self.fig.canvas.set_window_title('Co-evolving Multilayer Network')
         self.ax_mln = plt.subplot2grid((5, 2), (0, 0), colspan=1, rowspan=5)
         self.ax_nodes = plt.subplot2grid((5, 2), (0, 1), colspan=1, rowspan=2)
-        self.ax_3 = plt.subplot2grid((5, 2), (3, 1), colspan=1, rowspan=2)
+        self.ax_3 = plt.subplot2grid((5, 2), (2, 1), colspan=1, rowspan=3)
+        self.fig.tight_layout(pad=3, h_pad=1.25, w_pad=1.25)
 
     def initialize_links(self):
         # Compute an adjacency tensor for multilayer connectivity
-        links = np.zeros((self.nodesets, self.nodes, self.nodes))
+        links = np.zeros((self.layers, self.nodes, self.nodes))
         for layer in range(0, self.layers):
             layer_links = np.random.uniform(self.link_w_base-self.link_w_dev, self.link_w_base+self.link_w_dev,
                                             size=(self.nodes, self.nodes))
@@ -101,8 +102,7 @@ class CoevolvingMultilayerNetwork:
                 name = names.get_first_name()
             name_list.append(name)
             quantities.append(np.random.uniform(0, self.node_q_init))
-        name_list = self.layers*self.nodes * [' '] + name_list
-        labels = dict(zip(range(0, self.nodesets*self.nodes), name_list))
+        labels = dict(zip(range(0, self.nodes), name_list))
         return labels, quantities
 
     def initialize_layout(self):
@@ -113,22 +113,50 @@ class CoevolvingMultilayerNetwork:
         # Set the layout for one layer, and offset the positions of nodes in each other layer accordingly
         all_pos = {}
         pos = nx.shell_layout(auxiliary_graph)
-        for l, (sx, sy) in zip(range(0, self.nodesets), self.layer_coords):
+        for l in range(0, self.layers):
             for node in pos:
-                all_pos[l*self.nodes+node] = pos[node]*self.layer_scale if l != self.layers \
-                    else pos[node]*self.dynamic_node_scale  # increase space with dynamic nodes
-                all_pos[l*self.nodes+node] += (self.layer_x_dist*sx, self.layer_y_dist*sy)
+                all_pos[l*self.nodes+node] = pos[node]*self.layer_scale + (0, l*self.layer_y_dist)
         return all_pos
+
+    def arrange_subplots(self):
+        # Tune the limits and scales in the subplots
+        # Tune the axis on which the multilayer network is displayed
+        mln_y_min, mln_y_max = np.inf, -np.inf
+        for n in range(0, self.layers * self.nodes):
+            _, y = self.all_pos[n]
+            mln_y_min = y if y < mln_y_min else mln_y_min
+            mln_y_max = y if y > mln_y_max else mln_y_max
+        mln_ylims = (mln_y_min - (mln_y_max - mln_y_min)/(2*self.layers),
+                     mln_y_max + (mln_y_max - mln_y_min)/(2*self.layers))
+        self.ax_mln.set_ylim(mln_ylims)
+
+        # Tune the axis that shows the evolution of the nodes
+        dynamic_node_x_min, dynamic_node_x_max, dynamic_node_y_min, dynamic_node_y_max = np.inf, -np.inf, np.inf, -np.inf
+        for n in range(0, self.nodes):
+            x, y = self.all_pos[n]
+            dynamic_node_x_min = x if x < dynamic_node_x_min else dynamic_node_x_min
+            dynamic_node_x_max = x if x > dynamic_node_x_max else dynamic_node_x_max
+            dynamic_node_y_min = y if y < dynamic_node_y_min else dynamic_node_y_min
+            dynamic_node_y_max = y if y > dynamic_node_y_max else dynamic_node_y_max
+        dn_xlims = (dynamic_node_x_min - self.dynamic_node_lim_x_offset,
+                    dynamic_node_x_max + self.dynamic_node_lim_x_offset)
+        dn_ylims = (dynamic_node_y_min - self.dynamic_node_lim_y_offset,
+                    dynamic_node_y_max + self.dynamic_node_lim_y_offset)
+        self.ax_nodes.set_xlim(dn_xlims)
+        self.ax_nodes.set_ylim(dn_ylims)
+        # Remove boxes around axes
+        self.ax_nodes.axis('off')
+        self.ax_3.axis('off')
 
     def initialize_colormap(self):
         # Generate colormap for node-coloring
         colors = [["#{:06x}".format(random.randint(0, 0xFFFFFF)) for i in range(0, self.nodes)]]
-        colormap = self.nodesets * colors[0]
+        colormap = self.layers * colors[0]
         return colormap
 
     def initialize_interlayer_links(self):
         # Generate the links that indicate shared identity of nodes in different layers
-        links_interlayer = np.zeros((self.nodesets*self.nodes, self.nodesets*self.nodes))
+        links_interlayer = np.zeros((self.layers*self.nodes, self.layers*self.nodes))
         for l in range(0, self.layers-1):
             for n in range(0, self.nodes):
                 links_interlayer[l*self.nodes+n, (l+1)*self.nodes+n] = 1
@@ -138,14 +166,14 @@ class CoevolvingMultilayerNetwork:
 
     def links_tensor_to_matrix(self):
         # Convert adjacency tensor to a matrix form, for networkx compliance
-        links_mat = np.zeros((self.nodesets*self.nodes, self.nodesets*self.nodes))
+        links_mat = np.zeros((self.layers*self.nodes, self.layers*self.nodes))
         for n in range(0, self.layers):
             links_mat[self.nodes*n:self.nodes*(n+1), self.nodes*n:self.nodes*(n+1)] = self.links[n, :, :]
         return links_mat
 
     def links_matrix_to_tensor(self, links_mat):
         # Convert networkx-compliant matrix form to an adjancecy tensor
-        links = np.zeros((self.nodesets, self.nodes, self.nodes))
+        links = np.zeros((self.layers, self.nodes, self.nodes))
         for n in range(0, self.layers):
             links[n, :, :] = links_mat[self.nodes*n:self.nodes*(n+1), self.nodes*n:self.nodes*(n+1)]
         return links
@@ -159,54 +187,55 @@ class CoevolvingMultilayerNetwork:
                     links_flat.append(links_mat[lin, col])
         return links_flat
 
+    def draw_labels(self):
+        # Draw labels that correspond to nodes
+        nx.draw_networkx_labels(self.net, pos=self.all_pos, labels=self.labels, ax=self.ax_nodes,
+                                font_color=self.colors[1], font_size=self.node_font_sizes, font_family='verdana')
+
     def initialize(self):
         # A second initialization (next to __init__) for all parameters and variables that are more complex
         self.links = self.initialize_links()
         links_mat = self.links_tensor_to_matrix()
         self.net = nx.from_numpy_matrix(links_mat, create_using=nx.DiGraph())
+        self.dynamic_nodes = nx.from_numpy_matrix(np.zeros((self.nodes, self.nodes)))
         self.all_pos = self.initialize_layout()
+        self.arrange_subplots()
         self.colormap = self.initialize_colormap()
         self.labels, self.quantities = self.initialize_labels_and_quantities()
+        self.draw_labels()
         self.links_interlayer = self.initialize_interlayer_links()
         self.assign_quantities()
 
     def update_visualization(self):
         # Calculate sizes of links and nodes, and update the visualization of the network
-        nodesizes = copy.deepcopy(self.quantities)
-        for n in range(len(nodesizes)):
-            nodesizes[n] = self.node_size_min if nodesizes[n] < self.node_size_min else nodesizes[n]
-            nodesizes[n] = nodesizes[n]*self.node_size_scaling
-        nodesizes = self.layers*self.nodes * [self.static_node_size*self.node_size_scaling] + nodesizes
         edges = self.net.edges()
         linkwidths = [self.net[u][v]['weight']*self.link_size_scaling for u, v in edges]
+        node_sizes = copy.deepcopy(self.quantities)
+        for n in range(len(node_sizes)):
+            node_sizes[n] = self.node_size_min if node_sizes[n] < self.node_size_min else node_sizes[n]
+            node_sizes[n] = node_sizes[n]*self.node_size_scaling
 
         # Update network visualization
         # Draw multilayer network
-        nx.draw(self.net, pos=self.all_pos, node_size=nodesizes,
-                node_color=self.colormap,
-                edges=edges, width=linkwidths, edge_color=self.colors[0],
-                arrowstyle=self.arrow, arrowsize=.5, connectionstyle='arc3,rad=0.2',
-                with_labels=False, font_color=self.colors[1], font_size=self.node_fontsize)
+        nx.draw(self.net, pos=self.all_pos, node_size=self.mln_node_sizes, node_color=self.colormap,
+                edges=edges, width=linkwidths, edge_color=self.colors[0], ax=self.ax_mln,
+                arrowstyle=self.arrow, arrowsize=.5, connectionstyle='arc3,rad=0.2', with_labels=False)
         # Draw markers between identical nodes in multilayer network
-        nx.draw_networkx_edges(self.net, pos=self.all_pos, edgelist=self.links_interlayer,
+        nx.draw_networkx_edges(self.net, pos=self.all_pos, edgelist=self.links_interlayer, ax=self.ax_mln,
                                style='dotted', edge_color=self.colors[2], alpha=.5, arrows=False)
         # Draw dynamic nodes
-
-        # Draw labels that correspond to nodes
-        nx.draw_networkx_labels(self.net, pos=self.all_pos, labels=self.labels,
-                                font_color=self.colors[1], font_size=self.node_fontsize)
+        nx.draw_networkx_nodes(self.dynamic_nodes, pos=self.all_pos, node_size=node_sizes,
+                               node_color=self.colormap[:self.nodes], ax=self.ax_nodes, with_labels=False)
 
         # Animate the entire amount of quantity in the network
         txt = 'Entire quantity ' + str(np.round(np.sum(self.quantities), 2))
-        textvar = plt.text(self.layer_x_dist, 0, txt, horizontalalignment='center',
-                           verticalalignment='center', fontsize=self.txt_fontsize)
+        txtvar = self.ax_3.text(0.5, 0.5, txt, horizontalalignment='center',
+                           verticalalignment='center', fontsize=self.txt_font_size)
         plt.pause(.001)
         # Clear everything besides the image
-        self.fig.axes[0].set_xlim(-10, 30)
-        for artist in self.fig.axes[0].collections + self.fig.axes[0].patches:
+        for artist in self.fig.axes[0].collections + self.fig.axes[0].patches + self.fig.axes[1].collections:
             artist.remove()
-        textvar.set_visible(False)
-
+        txtvar.set_visible(False)
 
     def network_dynamics(self):
         # Co-evolving dynamics
