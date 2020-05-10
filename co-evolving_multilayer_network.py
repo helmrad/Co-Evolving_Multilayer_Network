@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
-# Created with Python 3.7
+# Created with Python 3.6
+"""
+This code generates a co-evolving network.
+An exchange of a quantity takes place on the network, while the weights of the links change randomly.
+"""
 
-"""
-This code generates a co-evolving multilayer network.
-The state of the network (some quantity that is exchanged) and the weights of the links change randomly.
-"""
+# TODO Project
+# Assign names of banks (maybe automated like bank of <random European country>)
+# Put a map of Europe below and use markers to affiliate nodes with countries
+# Three layers as given by Thurner
+# Graphs on the right, like total quantity over time and stock indices
+# Dynamics
 
 import pylab
 import matplotlib.pyplot as plt
@@ -15,6 +21,7 @@ import names
 import copy
 import itertools
 import random
+import matplotlib.image as mpimg
 
 
 class CoevolvingMultilayerNetwork:
@@ -46,6 +53,7 @@ class CoevolvingMultilayerNetwork:
         self.layer_scale = 3
         self.dynamic_node_scale = 3
         self.txt_fontsize = 15
+        self.mln_idx = self.nodes*self.layers
 
         # Simulation parameters
         self.iterations = 1000
@@ -62,6 +70,14 @@ class CoevolvingMultilayerNetwork:
         func2 = lambda x: -1*np.tanh(x)
         for n in range(self.nodes):
             self.funcs.append(func1) if np.random.uniform() > 0.5 else self.funcs.append(func2)
+
+        # Set up the figure
+        pylab.ion()
+        self.fig = plt.figure(0, figsize=(16, 8))
+        self.fig.canvas.set_window_title('Co-evolving Multilayer Network')
+        self.ax_mln = plt.subplot2grid((5, 2), (0, 0), colspan=1, rowspan=5)
+        self.ax_nodes = plt.subplot2grid((5, 2), (0, 1), colspan=1, rowspan=2)
+        self.ax_3 = plt.subplot2grid((5, 2), (3, 1), colspan=1, rowspan=2)
 
     def initialize_links(self):
         # Compute an adjacency tensor for multilayer connectivity
@@ -100,7 +116,7 @@ class CoevolvingMultilayerNetwork:
         for l, (sx, sy) in zip(range(0, self.nodesets), self.layer_coords):
             for node in pos:
                 all_pos[l*self.nodes+node] = pos[node]*self.layer_scale if l != self.layers \
-                                             else pos[node]*self.dynamic_node_scale  # scale dynamic view larger
+                    else pos[node]*self.dynamic_node_scale  # increase space with dynamic nodes
                 all_pos[l*self.nodes+node] += (self.layer_x_dist*sx, self.layer_y_dist*sy)
         return all_pos
 
@@ -147,7 +163,6 @@ class CoevolvingMultilayerNetwork:
         # A second initialization (next to __init__) for all parameters and variables that are more complex
         self.links = self.initialize_links()
         links_mat = self.links_tensor_to_matrix()
-        # links = self.links_matrix_to_tensor(links_mat)
         self.net = nx.from_numpy_matrix(links_mat, create_using=nx.DiGraph())
         self.all_pos = self.initialize_layout()
         self.colormap = self.initialize_colormap()
@@ -166,21 +181,32 @@ class CoevolvingMultilayerNetwork:
         linkwidths = [self.net[u][v]['weight']*self.link_size_scaling for u, v in edges]
 
         # Update network visualization
-        nx.draw(self.net, pos=self.all_pos, node_size=nodesizes, node_color=self.colormap,
+        # Draw multilayer network
+        nx.draw(self.net, pos=self.all_pos, node_size=nodesizes,
+                node_color=self.colormap,
                 edges=edges, width=linkwidths, edge_color=self.colors[0],
                 arrowstyle=self.arrow, arrowsize=.5, connectionstyle='arc3,rad=0.2',
                 with_labels=False, font_color=self.colors[1], font_size=self.node_fontsize)
-        nx.draw_networkx_labels(self.net, pos=self.all_pos, labels=self.labels,
-                                font_color=self.colors[1], font_size=self.node_fontsize)
+        # Draw markers between identical nodes in multilayer network
         nx.draw_networkx_edges(self.net, pos=self.all_pos, edgelist=self.links_interlayer,
                                style='dotted', edge_color=self.colors[2], alpha=.5, arrows=False)
+        # Draw dynamic nodes
+
+        # Draw labels that correspond to nodes
+        nx.draw_networkx_labels(self.net, pos=self.all_pos, labels=self.labels,
+                                font_color=self.colors[1], font_size=self.node_fontsize)
 
         # Animate the entire amount of quantity in the network
         txt = 'Entire quantity ' + str(np.round(np.sum(self.quantities), 2))
-        plt.text(self.layer_x_dist, 0, txt, horizontalalignment='center',
-                 verticalalignment='center', fontsize=self.txt_fontsize)
+        textvar = plt.text(self.layer_x_dist, 0, txt, horizontalalignment='center',
+                           verticalalignment='center', fontsize=self.txt_fontsize)
         plt.pause(.001)
-        plt.clf()
+        # Clear everything besides the image
+        self.fig.axes[0].set_xlim(-10, 30)
+        for artist in self.fig.axes[0].collections + self.fig.axes[0].patches:
+            artist.remove()
+        textvar.set_visible(False)
+
 
     def network_dynamics(self):
         # Co-evolving dynamics
@@ -221,10 +247,7 @@ class CoevolvingMultilayerNetwork:
             edge_triple[-1]['weight'] = link
 
     def simulate(self):
-        # Set up the plot and start simulating the dynamics and updating the visualization
-        pylab.ion()
-        fig = plt.figure(0, figsize=(16, 8))
-        fig.canvas.set_window_title('Propagation of a Quantity on a Dynamic Network')
+        # Start simulating the dynamics and updating the visualization
         # Repeatedly run dynamics and update visualization
         for i in range(self.iterations):
             self.update_visualization()
