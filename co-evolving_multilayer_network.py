@@ -1,16 +1,9 @@
 # -*- coding: utf-8 -*-
-# Created with Python 3.6
+# Created with Python 3.7
 """
-This code generates a co-evolving network.
+This code generates a co-evolving multilayer network.
 An exchange of a quantity takes place on the network, while the weights of the links change randomly.
 """
-
-# TODO Project
-# Assign names of banks (maybe automated like bank of <random European country>)
-# Put a map of Europe below and use markers to affiliate nodes with countries
-# Three layers as given by Thurner
-# Graphs on the right, like total quantity over time and stock indices
-# Dynamics
 
 
 import pylab
@@ -22,7 +15,6 @@ import names
 import copy
 import itertools
 import random
-import matplotlib.image as mpimg
 
 
 class CoevolvingMultilayerNetwork:

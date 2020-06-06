@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-# Created with Python 3.6
+# Created with Python 3.7
 """
-This code generates a co-evolving network.
-An exchange of a quantity takes place on the network, while the weights of the links change randomly.
+This code generates a simulation of a European economic system.
+A quantity is exchanged, consumed, and produced by the individual countries.
 """
 
 
