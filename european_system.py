@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Created with Python 3.7
 """
-This code generates a simulation of a European economic system.
+This code generates a simulation of European economic interactions.
 A quantity is exchanged, consumed, and produced by the individual countries.
 """
 
