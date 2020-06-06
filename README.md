@@ -7,7 +7,7 @@ This code generates a co-evolving multilayer network, that is, a network with mu
 # Application Example: European Economic System
 
 This framework can be used to describe a system in which particular entities, in this case European countries, interact with each other in several ways (thus the layers), to exchange, consume, and produce some quantity in a collective manner.
-The dynamic width of the links in the multilayer network on the left depicts the strength of the interaction between the respective countries. The dynamic size of the nodes on the top right depicts the amount of accumulated quantity for each country. The plot in the bottom right shows the temporal evolution of the aggregate quantity of all countries combined.
+The dynamic width of the links in the multilayer network on the left depicts the strength of the interaction between the respective countries. The dynamic size of the nodes in the top right depicts the amount of accumulated quantity for each country. The plot in the bottom right shows the temporal evolution of the aggregate quantity of all countries combined.
 
 <img src="./images/european_system_screenshot.svg">
 
