@@ -5,9 +5,6 @@ This code generates a simulation of a European economic system.
 The temporal evolution of imports and exports among several countries is visualized.
 """
 
-# TODO:
-# validate mechanism for imports and exports visualization, and if assignment to lower & upper network is correct
-
 
 import pylab
 import matplotlib.pyplot as plt

@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
 # Created with Python 3.7
 """
-<<<<<<< HEAD:european_random_system.py
-This code generates a simulation of a European system.
-A fictitious quantity is exchanged, consumed, and produced by the individual countries.
-=======
 This code generates a simulation of European economic interactions.
-A quantity is exchanged, consumed, and produced by the individual countries.
->>>>>>> e5942395731d0e81de337ab1f6aab2ae2dcec9c4:european_system.py
+A fictitious quantity is exchanged, consumed, and produced by the individual countries.
 """
 
 
