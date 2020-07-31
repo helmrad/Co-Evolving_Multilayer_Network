@@ -13,7 +13,7 @@ The plot in the bottom right shows the temporal evolution of the aggregate quant
 <img src="./images/european_random_system_screenshot.svg">
 
 In the following, the model is calibrated to trade data of several European countries between 2010 and 2020, obtained from the [UN Comtrade database](https://comtrade.un.org/data/doc/api/). The width of a link is proportional to the size of the trade between the two countries, while the dynamic node size in the top right reflects the aggregate exports of a country in the respective year and month depicted in the top left.
-The code allows for various specifications. For instance, in the following snapshot, the temporal evolution of only the imports and exports that exceed 500 mio. USD, involving the countries Germany, France, and the UK is shown.
+The code allows for various specifications. For instance, in the following snapshot, the temporal evolution of only the imports and exports that exceed 500 mio. USD and involve the countries Germany, France, and the UK is shown.
 
 <img src="./images/european_trade_system_DEFRUK_500mio.svg">
 
