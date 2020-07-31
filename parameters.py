@@ -1,0 +1,9 @@
+layers = 2
+nodes = 27
+years = [2000, 2021]
+start_sim = 2010
+end_sim = 2019
+c_vis = [1, 3, 4]
+min_trade_size = 10e8
+months = 12
+data_path = 'data/20200716_trade_data.npy'
